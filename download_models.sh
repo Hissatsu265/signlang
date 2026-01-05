@@ -10,7 +10,9 @@ TEXT_ENCODER_DIR="$BASE_DIR/text_encoders"
 CLIP_VISION_DIR="$BASE_DIR/clip_vision"
 VAE_DIR="$BASE_DIR/vae"
 LORA_DIR="$BASE_DIR/loras"
+# ======================================================================
 
+# ========================================================================
 echo "📁 Base directory: $BASE_DIR"
 
 # Tạo thư mục nếu chưa tồn tại
@@ -40,3 +42,29 @@ wget -nc -O "$DIFFUSION_DIR/Wan21_SteadyDancer_fp8_e4m3fn_scaled_KJ.safetensors"
 "https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/SteadyDancer/Wan21_SteadyDancer_fp8_e4m3fn_scaled_KJ.safetensors"
 
 echo "✅ All models downloaded successfully!"
+# =============================================================
+# ZIP_PATH="$BASE_DIR/video.zip"
+
+# # URL tải
+# VIDEO_URL="https://huggingface.co/datasets/Hissatsu265/signlang/resolve/main/video.zip"
+
+# echo "📁 Base directory: $BASE_DIR"
+
+# # Tạo thư mục nếu chưa tồn tại
+# echo "🔧 Creating directory if not exist..."
+# mkdir -p "$BASE_DIR"
+
+# echo "📥 Downloading sign language dataset..."
+
+# # Tải file zip, không tải lại nếu đã tồn tại
+# wget -nc -O "$ZIP_PATH" "$VIDEO_URL"
+
+# echo "📦 Unzipping dataset..."
+
+# # Giải nén
+# unzip -o "$ZIP_PATH" -d "$BASE_DIR"
+
+# echo "🧹 Cleaning up zip file..."
+# rm -f "$ZIP_PATH"
+
+# echo "✅ Dataset downloaded and extracted successfully!"
