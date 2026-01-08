@@ -6,6 +6,7 @@ from app.service.extract_pose import SignLanguagePoseTransition
 from app.service.video import convert_posetovideo
 from utils.crop_upscale import crop_and_upscale_video
 from utils.map import get_video_paths_from_text
+from utils.dgs_structure import dgs_postprocess
 import asyncio
 import os
 # Biến global để quản lý trạng thái xử lý
@@ -32,10 +33,16 @@ def process_text_to_video(text_input):
         # result = mapper.process(text_input) 
         result = None
 
-        temp_mapper = SignLanguageMapper(video_dir="/workspace/signlang/video")
+        temp_mapper = SignLanguageMapper(video_dir="/workspace/signlang/video_combine")
         result = temp_mapper.process(text_input)
+        # ================xử lí cấu trúc======================
+        with open("result_log.txt", "a", encoding="utf-8") as f:
+            f.write(f"==============\nResult: {result}\n")
+        result['output'] = dgs_postprocess(result['output'], text_input)
         print(f"Result: {result}")
-        
+        with open("result_log.txt", "a", encoding="utf-8") as f:
+            f.write(f"2Result: {result}\n==============\n")
+        # ====================================================
         def async_cleanup():
             time.sleep(0.1)  # Đợi một chút
             if temp_mapper is not None:

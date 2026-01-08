@@ -2,7 +2,7 @@ import os
 import re
 import random
 
-BASE_PATH = "/workspace/signlang/video"
+BASE_PATH = "/workspace/signlang/video_combine"
 
 def get_video_paths_from_text(text):
     # chuẩn hóa text, bỏ ký tự đặc biệt

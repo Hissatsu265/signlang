@@ -1,0 +1,17 @@
+Result: {'original': 'Hallo, wie geht es dir?\n', 'output': 'hallo gehen es du wie', 'words': ['hallo', 'wie', 'gehen', 'es', 'du'], 'coverage': 100.0, 'strategy': 'normalized'}
+Result: {'original': 'Ich habe Hunger', 'output': 'hunger ich', 'words': ['hunger', 'ich', 'haben'], 'coverage': 100.0, 'strategy': 'normalized'}
+Result: {'original': 'Warum bist du gestern nicht mit deinem Freund ins Kino gegangen?', 'output': 'gestern mit freund dein ins kino gehen du nicht warum', 'words': ['gestern', 'mit', 'freund', 'dein', 'ins', 'kino', 'gehen', 'du', 'nicht', 'warum', 'sein'], 'coverage': 100.0, 'strategy': 'normalized'}
+Result: {'original': 'Morgen gehe ich nicht zur Schule, weil ich krank bin', 'output': 'morgen schule ich nicht gehen weil krank', 'words': ['morgen', 'schule', 'ich', 'nicht', 'gehen', 'weil', 'krank', 'sein'], 'coverage': 100.0, 'strategy': 'normalized'}
+Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag kaufen du', 'words': ['montag', 'kaufen', 'du', 'haben', 'haben'], 'coverage': 100.0, 'strategy': 'repaired'}
+==============
+Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag kaufen du haben haben', 'words': ['montag', 'kaufen', 'du', 'haben', 'haben'], 'coverage': 100.0, 'strategy': 'repaired'}
+2Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag kaufen du', 'words': ['montag', 'kaufen', 'du', 'haben', 'haben'], 'coverage': 100.0, 'strategy': 'repaired'}
+==============
+==============
+Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag du kaufen kaufen', 'words': ['montag', 'du', 'kaufen', 'kaufen'], 'coverage': 100.0, 'strategy': 'repaired'}
+2Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag du kaufen', 'words': ['montag', 'du', 'kaufen', 'kaufen'], 'coverage': 100.0, 'strategy': 'repaired'}
+==============
+==============
+Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag kaufen du haben be', 'words': ['montag', 'kaufen', 'du', 'haben', 'be'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag kaufen du was', 'words': ['montag', 'kaufen', 'du', 'haben', 'be'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============

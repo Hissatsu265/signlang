@@ -437,7 +437,7 @@ if __name__ == "__main__":
         stats_dry = detector.process_and_cleanup_folder(
             root_folder,
             sample_frames=30,
-            dry_run=False  # Chỉ xem, không thực sự xóa/crop
+            dry_run=True  # Chỉ xem, không thực sự xóa/crop
         )
         
         # Hỏi xác nhận
@@ -453,7 +453,7 @@ if __name__ == "__main__":
             stats = detector.process_and_cleanup_folder(
                 root_folder,
                 sample_frames=30,
-                dry_run=True  # Thực sự xóa và crop
+                dry_run=False  # Thực sự xóa và crop
             )
             
             # Lưu báo cáo
