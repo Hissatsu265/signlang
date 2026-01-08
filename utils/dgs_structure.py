@@ -9,7 +9,7 @@ def dgs_postprocess(sentence: str,original_sentence:str="") -> str:
     
     sentence = replace_be_haben_with_was(original_sentence, sentence)
     tokens = sentence.lower().split()
-
+    
     # 1. remove always
     REMOVE_ALWAYS = {"haben", "werden", "tun", "lassen", 
     "bleiben","das", "der", "die",
