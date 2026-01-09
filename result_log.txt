@@ -15,3 +15,23 @@ Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag du kauf
 Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag kaufen du haben be', 'words': ['montag', 'kaufen', 'du', 'haben', 'be'], 'coverage': 100.0, 'strategy': 'normalized'}
 2Result: {'original': 'Was hast du am Montag gekauft?', 'output': 'montag kaufen du was', 'words': ['montag', 'kaufen', 'du', 'haben', 'be'], 'coverage': 100.0, 'strategy': 'normalized'}
 ==============
+==============
+Result: {'original': 'Ich habe gestern im Lotto 2 Milliarden gewonnen.', 'output': 'hallo', 'words': ['hallo'], 'coverage': 0.0, 'strategy': 'synonym'}
+2Result: {'original': 'Ich habe gestern im Lotto 2 Milliarden gewonnen.', 'output': 'hallo', 'words': ['hallo'], 'coverage': 0.0, 'strategy': 'synonym'}
+==============
+==============
+Result: {'original': 'Hallo, wie geht es dir?', 'output': 'hallo wie gehen es du', 'words': ['hallo', 'wie', 'gehen', 'es', 'du'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Hallo, wie geht es dir?', 'output': 'hallo geht du wie', 'words': ['hallo', 'wie', 'gehen', 'es', 'du'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============
+==============
+Result: {'original': 'Ich war gerade im Supermarkt und habe zwei Hühner und drei Kartoffeln gekauft.', 'output': 'im supermarkt gerade ich zwei huhn und drei kartoffel kaufen und', 'words': ['im', 'supermarkt', 'gerade', 'ich', 'zwei', 'huhn', 'und', 'drei', 'kartoffel', 'kaufen', 'und'], 'coverage': 100.0, 'strategy': 'synonym'}
+2Result: {'original': 'Ich war gerade im Supermarkt und habe zwei Hühner und drei Kartoffeln gekauft.', 'output': 'im supermarkt gerade ich zwei huhn und drei kartoffel kaufen und', 'words': ['im', 'supermarkt', 'gerade', 'ich', 'zwei', 'huhn', 'und', 'drei', 'kartoffel', 'kaufen', 'und'], 'coverage': 100.0, 'strategy': 'synonym'}
+==============
+==============
+Result: {'original': 'Morgen gehe ich zur Schule, um den Lehrer kennenzulernen.', 'output': 'morgen schule gehen ich um dozent kennenlernen', 'words': ['morgen', 'schule', 'gehen', 'ich', 'um', 'dozent', 'kennenlernen'], 'coverage': 100.0, 'strategy': 'repaired'}
+2Result: {'original': 'Morgen gehe ich zur Schule, um den Lehrer kennenzulernen.', 'output': 'morgen schule gehen ich um dozent kennenlernen', 'words': ['morgen', 'schule', 'gehen', 'ich', 'um', 'dozent', 'kennenlernen'], 'coverage': 100.0, 'strategy': 'repaired'}
+==============
+==============
+Result: {'original': 'Ich fahre dieses Wochenende nach München, um meine Mutter zu besuchen. Möchtest du mitkommen?', 'output': 'wochenende nach münchen fahren ich mutter besuchen um du mitkommen', 'words': ['wochenende', 'nach', 'münchen', 'fahren', 'ich', 'mutter', 'besuchen', 'um', 'du', 'mitkommen'], 'coverage': 100.0, 'strategy': 'synonym'}
+2Result: {'original': 'Ich fahre dieses Wochenende nach München, um meine Mutter zu besuchen. Möchtest du mitkommen?', 'output': 'wochenende nach münchen fahren ich mutter besuchen um du mitkommen', 'words': ['wochenende', 'nach', 'münchen', 'fahren', 'ich', 'mutter', 'besuchen', 'um', 'du', 'mitkommen'], 'coverage': 100.0, 'strategy': 'synonym'}
+==============

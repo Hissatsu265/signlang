@@ -515,15 +515,28 @@ RULES:
 - No punctuation
 - Output one single line only
 
-DGS DEFAULT ORDER (use only if present):
-TIME / CONDITION →
-PLACE →
-TOPIC or OBJECT →
-SUBJECT →
-MAIN VERB →
-MODAL →
-NEGATION →
-WH-WORD (always last)
+DGS ORDER GUIDELINES (apply ONLY if elements are present):
+1. TIME / CONDITION →
+   (heute, morgen, gestern, jetzt, später, oft, immer, nie, ...
+    any time, frequency, or conditional words)
+2. PLACE →
+   (zu-hause, schule, arbeit, berlin, hier, dort, ...
+    any location or place-related words)
+3. TOPIC or OBJECT →
+   (brot, apfel, auto, arbeit, problem, ...
+    any noun that is the topic or object)
+4. SUBJECT →
+   (ich, du, er, sie, wir, ihr, sie, ...
+    any person or animate subject)
+5. MAIN VERB →
+   (essen, gehen, arbeiten, lernen, ...
+    any main action verb)
+6. MODAL →
+   (müssen, wollen, können, sollen, dürfen, ...)
+7. NEGATION →
+   (nicht, kein, nie, ...)
+8. WH-WORD (always last) →
+   (was, wer, wo, wann, warum, wie, ...)
 
 If multiple orders are possible, choose the most common DGS order.
 Do not explain.

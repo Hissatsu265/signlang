@@ -222,7 +222,7 @@ class SignLanguagePoseTransition:
 
         return interpolated_poses
 
-    def render_pose_video(self, poses, output_path, fps=30, width=640, height=480):
+    def render_pose_video(self, poses, output_path, fps=30, width=720, height=720):
         """Render poses thành video"""
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))

@@ -3,6 +3,8 @@ import re
 def replace_be_haben_with_was(original_sentence, sentence):
     if "was" in original_sentence.lower() and "be" in sentence.lower() :
         sentence = re.sub(r"\bbe\b", "was", sentence, flags=re.IGNORECASE)
+    if "geht" in original_sentence.lower() and "gehen" in sentence.lower() and "geht" not in sentence.lower():
+        sentence = re.sub(r"\bgehen\b", "geht", sentence, flags=re.IGNORECASE)
 
     return sentence
 def dgs_postprocess(sentence: str,original_sentence:str="") -> str:
@@ -19,8 +21,8 @@ def dgs_postprocess(sentence: str,original_sentence:str="") -> str:
     "jeder", "jede", "jedes", "manche", "solcher",
     "zu", "zur", "zum", "von", "vom",
     "über","für","bei","auf","an","es","man",
-    "etwas",
-    "nichts","be"
+    "nach", "aus", "mit",
+    "be","um", "aber", "und", "oder", "weil", "da", "dass", "denn"
     }
 
     # 2. modal mapping
