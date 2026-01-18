@@ -1,8 +1,11 @@
 import gradio as gr
 import threading
 import time
-from app.service.llm import SignLanguageMapper
-from app.service.extract_pose import SignLanguagePoseTransition
+# from app.service.llm import SignLanguageMapper
+from app.service.llm_ver2 import SignLanguageMapper
+# from app.service.extract_pose import SignLanguagePoseTransition
+from app.service.extract_pose2 import OpenPoseVideoRenderer
+
 from app.service.video import convert_posetovideo
 from utils.crop_upscale import crop_and_upscale_video
 from utils.map import get_video_paths_from_text
@@ -33,7 +36,7 @@ def process_text_to_video(text_input):
         # result = mapper.process(text_input) 
         result = None
 
-        temp_mapper = SignLanguageMapper(video_dir="/workspace/signlang/video_combine")
+        temp_mapper = SignLanguageMapper(video_dir="/workspace/signlang/pose_json")
         result = temp_mapper.process(text_input)
         # ================xử lí cấu trúc======================
         with open("result_log.txt", "a", encoding="utf-8") as f:
@@ -54,29 +57,39 @@ def process_text_to_video(text_input):
 
 # =====================Extracpose===========================================
         path_video_worlds= get_video_paths_from_text(result['output'])
-        list_path_videos=[]
-        for word, path in path_video_worlds.items():
+        json_paths=[]
+        for word, path in path_video_worlds:
             if path:
-                list_path_videos.append(path)
+                json_paths.append(path)
         
-        pose_extractor = SignLanguagePoseTransition()
+        # pose_extractor = SignLanguagePoseTransition()
+        pose_extractor= OpenPoseVideoRenderer()
         output_path = "multi_transition_output.mp4"
 
         transition_frames = 30
-        pose_extractor.create_multi_video_transition(
-            video_paths=list_path_videos,
+        # pose_extractor.create_multi_video_transition(
+        #     video_paths=list_path_videos,
+        #     output_path=output_path,
+        #     transition_frames=transition_frames
+        # )
+        pose_extractor.merge_multi_json_videos(
+            json_paths=json_paths,
             output_path=output_path,
-            transition_frames=transition_frames
-        )
-        crop_and_upscale_video(
-            input_path=output_path,
-            output_path="/workspace/signlang/output_720.mp4",
-            size=720,
-            keep_audio=False
+            transition_frames=16,
+            fps=16,
+            width=720,
+            height=720
         )
 
+        # crop_and_upscale_video(
+        #     input_path=output_path,
+        #     output_path="/workspace/signlang/output_720.mp4",
+        #     size=720,
+        #     keep_audio=False
+        # )
+
         # =====================Convert to video=============================
-        final_video_path = asyncio.run(convert_posetovideo("/workspace/signlang/output_720.mp4"))
+        final_video_path = asyncio.run(convert_posetovideo("/workspace/signlang/multi_transition_output.mp4"))
         # ===================================================
 
         # video_path = "/workspace/signlang/video/-frei/processed_45750628.mp4"

@@ -35,3 +35,23 @@ Result: {'original': 'Morgen gehe ich zur Schule, um den Lehrer kennenzulernen.'
 Result: {'original': 'Ich fahre dieses Wochenende nach München, um meine Mutter zu besuchen. Möchtest du mitkommen?', 'output': 'wochenende nach münchen fahren ich mutter besuchen um du mitkommen', 'words': ['wochenende', 'nach', 'münchen', 'fahren', 'ich', 'mutter', 'besuchen', 'um', 'du', 'mitkommen'], 'coverage': 100.0, 'strategy': 'synonym'}
 2Result: {'original': 'Ich fahre dieses Wochenende nach München, um meine Mutter zu besuchen. Möchtest du mitkommen?', 'output': 'wochenende nach münchen fahren ich mutter besuchen um du mitkommen', 'words': ['wochenende', 'nach', 'münchen', 'fahren', 'ich', 'mutter', 'besuchen', 'um', 'du', 'mitkommen'], 'coverage': 100.0, 'strategy': 'synonym'}
 ==============
+==============
+Result: {'original': 'Ich aß die beiden Kuchen auf dem Tisch.', 'output': 'zwei kuchen ich auf tisch essen', 'words': ['zwei', 'kuchen', 'ich', 'auf', 'tisch', 'essen'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Ich aß die beiden Kuchen auf dem Tisch.', 'output': 'zwei kuchen ich tisch essen', 'words': ['zwei', 'kuchen', 'ich', 'auf', 'tisch', 'essen'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============
+==============
+Result: {'original': 'Ich habe 2 den Apfel gegessen.', 'output': 'ich 2 apfel essen haben', 'words': ['ich', '2', 'apfel', 'essen', 'haben'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Ich habe 2 den Apfel gegessen.', 'output': 'ich 2 apfel essen', 'words': ['ich', '2', 'apfel', 'essen', 'haben'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============
+==============
+Result: {'original': 'Ich habe 2 den Apfel gegessen.', 'output': 'ich 2 apfel essen haben', 'words': ['ich', '2', 'apfel', 'essen', 'haben'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Ich habe 2 den Apfel gegessen.', 'output': 'ich 2 apfel essen', 'words': ['ich', '2', 'apfel', 'essen', 'haben'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============
+==============
+Result: {'original': 'Ich habe 2 den Apfel gegessen.', 'output': 'ich 2 apfel essen haben', 'words': ['ich', '2', 'apfel', 'essen', 'haben'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Ich habe 2 den Apfel gegessen.', 'output': 'ich 2 apfel essen', 'words': ['ich', '2', 'apfel', 'essen', 'haben'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============
+==============
+Result: {'original': 'Tôi đã ăn hai quả táo trên bàn.', 'output': 'zwei apfel ich auf tisch essen', 'words': ['zwei', 'apfel', 'ich', 'auf', 'tisch', 'essen'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Tôi đã ăn hai quả táo trên bàn.', 'output': 'zwei apfel ich tisch essen', 'words': ['zwei', 'apfel', 'ich', 'auf', 'tisch', 'essen'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============

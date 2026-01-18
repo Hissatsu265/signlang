@@ -282,7 +282,7 @@ async def convert_posetovideo(video_path_input, image_path=""):
         workflow_path=workflow_path,
         job_id=job_id,
         video_path=video_path_input,
-        image_path="/workspace/Gemini_Generated_Image_2vy9gn2vy9gn2vy9.jpeg"
+        image_path="/workspace/signlang/Gemini_Generated_Image_2vy9gn2vy9gn2vy9.jpeg"
     )
     
     if video_path:

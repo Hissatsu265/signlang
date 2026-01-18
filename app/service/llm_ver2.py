@@ -13,6 +13,7 @@ class SignLanguageMapper:
     """
     Chuyển đổi câu tiếng Anh/Đức thành chuỗi từ sign language hợp lệ
     Chiến lược: Ưu tiên giữ nguyên câu gốc -> Tìm biến thể morphology -> Thay thế từ thiếu -> Tạo câu đồng nghĩa -> Sắp xếp theo DGS
+    ** CHUẨN HÓA: Giữ nguyên số trong câu **
     """
 
     def __init__(self, video_dir: str, model_name: str = "microsoft/phi-4"):
@@ -36,6 +37,38 @@ class SignLanguageMapper:
         self.cleanup()
         return False
 
+    def _extract_numbers(self, text: str) -> Dict[str, str]:
+        """
+        Trích xuất và thay thế số bằng placeholder
+        Returns: dict mapping placeholder -> original number
+        """
+        number_map = {}
+        counter = 0
+
+        def replace_number(match):
+            nonlocal counter
+            number = match.group()
+            placeholder = f"__NUM{counter}__"
+            number_map[placeholder] = number
+            counter += 1
+            return placeholder
+
+        # Pattern để khớp số (bao gồm số thập phân, số âm)
+        number_pattern = r'-?\d+(?:[.,]\d+)?'
+        modified_text = re.sub(number_pattern, replace_number, text)
+
+        return number_map, modified_text
+
+    def _restore_numbers(self, text: str, number_map: Dict[str, str]) -> str:
+        """
+        Khôi phục số từ placeholder
+        """
+        result = text
+        for placeholder, original_number in number_map.items():
+            result = result.replace(placeholder.lower(), original_number)
+            result = result.replace(placeholder, original_number)
+        return result
+
     def _normalize_unicode(self, text: str) -> str:
         """Chuẩn hóa Unicode về dạng NFC (cho tiếng Đức, tiếng Việt)"""
         return unicodedata.normalize('NFC', text).lower().strip()
@@ -48,12 +81,22 @@ class SignLanguageMapper:
                 if folder.is_dir():
                     normalized_name = self._normalize_unicode(folder.name)
                     vocab.add(normalized_name)
-        print(f"📚 Loaded {len(vocab)} words from vocabulary")
+
+        # Thêm số vào vocabulary (0-100)
+        for i in range(101):
+            vocab.add(str(i))
+
+        print(f"📚 Loaded {len(vocab)} words from vocabulary (including numbers)")
         return vocab
 
     def _word_exists_in_vocab(self, word: str) -> bool:
         """Kiểm tra từ có trong vocabulary (với Unicode normalization)"""
         normalized_word = self._normalize_unicode(word)
+
+        # Kiểm tra nếu là số
+        if re.match(r'^-?\d+(?:[.,]\d+)?$', word):
+            return True
+
         return normalized_word in self.vocabulary
 
     def _init_llm(self, model_name: str):
@@ -87,7 +130,15 @@ class SignLanguageMapper:
                 print(f"⚠️ Cleanup warning: {e}")
 
     def _normalize_word(self, word: str) -> str:
-        """Chuyển về base form (lemmatize)"""
+        """Chuyển về base form (lemmatize) - GIỮ NGUYÊN SỐ"""
+        # Kiểm tra nếu là số -> giữ nguyên
+        if re.match(r'^-?\d+(?:[.,]\d+)?$', word):
+            return word
+
+        # Kiểm tra nếu là placeholder số -> giữ nguyên
+        if re.match(r'^__NUM\d+__$', word, re.IGNORECASE):
+            return word.lower()
+
         word = self._normalize_unicode(word)
 
         # German verb conjugations
@@ -155,14 +206,16 @@ KEEP & CONVERT TO BASE FORM:
 - Negation (nicht, kein, no, not)
 - Politeness (bitte, please)
 - Modal verbs in base form (können, müssen, wollen, can, must, want)
+- **NUMBERS AND PLACEHOLDERS (like __NUM0__, __NUM1__) - KEEP EXACTLY AS IS**
 
 PRESERVE:
 - Original word order (unless grammatically impossible)
 - Sentence type (question stays question, request stays request)
 - Core meaning
+- **ALL NUMBERS AND NUMBER PLACEHOLDERS (__NUMX__) MUST REMAIN UNCHANGED**
 
 OUTPUT FORMAT:
-- Lowercase
+- Lowercase (except number placeholders which should stay as is)
 - Space-separated words
 - One line only
 - No explanations
@@ -178,17 +231,30 @@ Output: ich wollen gehen markt
 Input: "Could you please help me?"
 Output: können du bitte helfen ich
 
+Input: "I have __NUM0__ apples and __NUM1__ bananas"
+Output: ich haben __NUM0__ apfel __NUM1__ banane
+
+Input: "She is __NUM0__ years old"
+Output: sie sein __NUM0__ jahr alt
+
 Now normalize this sentence:
 """
 
     def _normalize_sentence(self, text: str) -> str:
-      
+        """Chuẩn hóa câu - GIỮ NGUYÊN SỐ"""
         try:
+            # Bước 1: Trích xuất số
+            number_map, text_with_placeholders = self._extract_numbers(text)
+
+            if number_map:
+                print(f"  🔢 Đã trích xuất {len(number_map)} số: {number_map}")
+
+            # Bước 2: Xử lý với LLM
             pipeline = self._get_pipeline()
 
             messages = [
                 {"role": "system", "content": self._get_normalization_prompt()},
-                {"role": "user", "content": text}
+                {"role": "user", "content": text_with_placeholders}
             ]
 
             outputs = pipeline(
@@ -200,21 +266,32 @@ Now normalize this sentence:
 
             response = outputs[0]["generated_text"][-1]["content"]
 
-            # Parse response
-            normalized = re.sub(r'[^a-zäöüß\s]', '', response.lower().strip())
+            # Parse response - GIỮ NGUYÊN PLACEHOLDER
+            # Thay đổi regex để không loại bỏ underscore và chữ hoa trong placeholder
+            normalized = re.sub(r'[^a-zäöüß\s_0-9]', '', response.lower().strip())
             words = normalized.split()
 
-            # Apply manual normalization rules
+            # Apply manual normalization rules (giữ nguyên placeholder)
             words = [self._normalize_word(w) for w in words if w]
 
-            return ' '.join(words)
+            result = ' '.join(words)
+
+            # Bước 3: Khôi phục số
+            result = self._restore_numbers(result, number_map)
+
+            return result
 
         except Exception as e:
             print(f"⚠️ Normalization error: {e}")
-            return self._simple_normalize(text)
+            # Fallback cũng phải giữ số
+            number_map, text_with_placeholders = self._extract_numbers(text)
+            result = self._simple_normalize(text_with_placeholders)
+            result = self._restore_numbers(result, number_map)
+            return result
 
     def _simple_normalize(self, text: str) -> str:
-        """Fallback normalization nếu LLM fail"""
+        """Fallback normalization nếu LLM fail - GIỮ NGUYÊN SỐ VÀ PLACEHOLDER"""
+        # Giữ chữ, số, khoảng trắng, underscore
         text = re.sub(r'[^\w\s]', '', text.lower())
 
         remove_words = {'der', 'die', 'das', 'ein', 'eine', 'the', 'a', 'an',
@@ -248,14 +325,15 @@ You are a linguistic expert in German Morphology and Sign Language (DGS) Lexicon
 CONTEXT:
 I have a DGS dataset, but some words from my input sentence are missing. I need you to find a variant of the missing word that is more likely to exist in a standard DGS dictionary.
 
-RULES:
-1. MANDATORY: Find the "Lemma" (Base form/Infinitiv) of the word. (e.g., "kocht" -> "kochen", "porsche" -> "porsche").
-2. ADJECTIVES/ADVERBS: Remove comparative/superlative suffixes (e.g., "schneller" -> "schnell").
-3. NOUNS: Convert plural to singular (e.g., "kinder" -> "kind").
-4. VERBS: Always return the Infinitive form (e.g., "ging" -> "gehen").
-5. NO SYNONYMS: Do not replace the word with a different meaning (e.g., do not change "salty" to "spicy").
-6. COMPOUND WORDS: If a compound word is missing, try breaking it down (e.g., "kochunterricht" -> "kochen" + "unterricht").
-7. FINGERSPELLING: If no grammatical variant makes sense, return the original word.
+CRITICAL RULES:
+1. **NEVER MODIFY NUMBERS OR NUMBER PLACEHOLDERS** - If the word is a number or __NUMX__, return it as is
+2. MANDATORY: Find the "Lemma" (Base form/Infinitiv) of the word. (e.g., "kocht" -> "kochen", "porsche" -> "porsche").
+3. ADJECTIVES/ADVERBS: Remove comparative/superlative suffixes (e.g., "schneller" -> "schnell").
+4. NOUNS: Convert plural to singular (e.g., "kinder" -> "kind").
+5. VERBS: Always return the Infinitive form (e.g., "ging" -> "gehen").
+6. NO SYNONYMS: Do not replace the word with a different meaning (e.g., do not change "salty" to "spicy").
+7. COMPOUND WORDS: If a compound word is missing, try breaking it down (e.g., "kochunterricht" -> "kochen" + "unterricht").
+8. FINGERSPELLING: If no grammatical variant makes sense, return the original word.
 
 INPUT FORMAT:
 Missing Word: [word]
@@ -271,13 +349,25 @@ Input:
 
 Output: ["kochen", "kocht"]
 
+Example with number:
+Input:
+- Missing Word: __NUM0__
+- Sentence: Ich habe __NUM0__ Äpfel
+
+Output: ["__NUM0__"]
+
 Now find variants for:
 """
 
     def _find_morphology_variants(self, word: str, context: str) -> List[str]:
         """
         Tìm các biến thể morphology của từ (lemma, singular, infinitive, etc.)
+        GIỮ NGUYÊN SỐ VÀ PLACEHOLDER
         """
+        # Nếu là số hoặc placeholder -> giữ nguyên
+        if re.match(r'^-?\d+(?:[.,]\d+)?$', word) or re.match(r'^__NUM\d+__$', word, re.IGNORECASE):
+            return [word]
+
         try:
             pipeline = self._get_pipeline()
 
@@ -306,25 +396,29 @@ Full Sentence Context: {context}
                 json_match = re.search(r'\[.*?\]', response, re.DOTALL)
                 if json_match:
                     variants = json.loads(json_match.group())
-                    # Normalize all variants
-                    variants = [self._normalize_unicode(v) for v in variants if v]
+                    # Normalize all variants (giữ nguyên số/placeholder)
+                    variants = [self._normalize_unicode(v) if not re.match(r'^-?\d+(?:[.,]\d+)?$|^__NUM\d+__$', v, re.IGNORECASE)
+                               else v for v in variants if v]
                     return variants
                 else:
-                    return [self._normalize_unicode(word)]
+                    return [word]
             except:
-                return [self._normalize_unicode(word)]
+                return [word]
 
         except Exception as e:
             print(f"    ⚠️ Morphology variant error: {e}")
-            return [self._normalize_unicode(word)]
+            return [word]
 
     def _find_replacement(self, word: str, context: str) -> Optional[str]:
         """
         Tìm từ thay thế cho từ thiếu
         Bước 1: Tìm biến thể morphology
         Bước 2: Nếu không tìm thấy -> tìm từ đồng nghĩa
+        GIỮ NGUYÊN SỐ
         """
-   
+        # Nếu là số -> không cần thay thế
+        if re.match(r'^-?\d+(?:[.,]\d+)?$', word):
+            return word
 
         # BƯỚC 2: Tìm từ đồng nghĩa
         print(f"    🔍 Bước 2: Tìm từ đồng nghĩa...")
@@ -341,7 +435,12 @@ Full Sentence Context: {context}
     def _ask_llm_for_synonym(self, word: str, context: str) -> List[str]:
         """
         Hỏi LLM gợi ý từ đồng nghĩa/thay thế
+        KHÔNG BAO GIỜ THAY THẾ SỐ
         """
+        # Nếu là số -> không tìm synonym
+        if re.match(r'^-?\d+(?:[.,]\d+)?$', word):
+            return [word]
+
         prompt = f"""
 You are assisting a German Sign Language (DGS) gloss system.
 
@@ -353,6 +452,7 @@ Requirements:
 - Do NOT change sentence type (question/statement)
 - Return EXACTLY 4 alternatives
 - If NO safe replacement exists, return "NONE" four times
+- **NEVER replace numbers or number placeholders**
 
 Missing word: "{word}"
 Sentence context: "{context}"
@@ -400,6 +500,7 @@ OUTPUT FORMAT (4 lines, one word per line, lowercase, no explanations):
         """
         Bước 2: Thử thay thế từng từ thiếu (morphology variants + synonyms)
         Returns: (repaired_sentence, fully_repaired)
+        GIỮ NGUYÊN SỐ
         """
         print(f"\n  🔧 Thử thay thế {len(missing_words)} từ thiếu...")
 
@@ -407,6 +508,10 @@ OUTPUT FORMAT (4 lines, one word per line, lowercase, no explanations):
         replacement_count = 0
 
         for missing_word in missing_words:
+            # Bỏ qua số
+            if re.match(r'^-?\d+(?:[.,]\d+)?$', missing_word):
+                continue
+
             replacement = self._find_replacement(missing_word, sentence)
 
             if replacement:
@@ -433,6 +538,7 @@ Task: Generate synonym sentences that:
 - Use ONLY base form words (lemma)
 - Preserve sentence type (question → question, request → request)
 - Use SIMPLE, COMMON words
+- **PRESERVE ALL NUMBERS AND PLACEHOLDERS (__NUMX__) EXACTLY AS THEY APPEAR**
 
 REMOVE:
 - Articles, auxiliaries, punctuation
@@ -442,6 +548,7 @@ KEEP:
 - Negation (nicht, kein, no, not)
 - Politeness (bitte, please)
 - Modal meaning (können, müssen, wollen, can, must, want)
+- **ALL NUMBERS AND PLACEHOLDERS - DO NOT CHANGE THEM**
 
 OUTPUT: Generate EXACTLY 2 alternative sentences.
 
@@ -457,19 +564,28 @@ Output:
 können du bitte helfen ich
 du helfen ich bitte
 
+Input: "I have __NUM0__ apples"
+Output:
+ich haben __NUM0__ apfel
+ich __NUM0__ apfel haben
+
 Now generate 2 alternatives for:
 """
 
     def _generate_synonym_sentences(self, normalized_sentence: str, original_text: str) -> List[str]:
         """
         Bước 3: Tạo 2 câu đồng nghĩa nếu câu gốc không thể sửa
+        GIỮ NGUYÊN SỐ
         """
         try:
+            # Trích xuất số từ câu gốc
+            number_map, text_with_placeholders = self._extract_numbers(original_text)
+
             pipeline = self._get_pipeline()
 
             messages = [
                 {"role": "system", "content": self._get_synonym_sentence_prompt()},
-                {"role": "user", "content": original_text}
+                {"role": "user", "content": text_with_placeholders}
             ]
 
             outputs = pipeline(
@@ -489,14 +605,18 @@ Now generate 2 alternatives for:
             for line in lines:
                 # Clean
                 line = re.sub(r'^[\d\-\*\.]+\s*', '', line)
-                line = re.sub(r'[^a-zäöüß\s]', '', line.lower())
+                # Giữ số, chữ, underscore
+                line = re.sub(r'[^a-zäöüß\s_0-9]', '', line.lower())
 
                 if not line:
                     continue
 
                 words = [self._normalize_word(w) for w in line.split()]
                 if words:
-                    alternatives.append(' '.join(words))
+                    alt_sentence = ' '.join(words)
+                    # Khôi phục số
+                    alt_sentence = self._restore_numbers(alt_sentence, number_map)
+                    alternatives.append(alt_sentence)
 
             return alternatives[:2]
 
@@ -506,11 +626,13 @@ Now generate 2 alternatives for:
 
     def _get_dgs_word_order_prompt(self) -> str:
         return """
-        You are a DGS word-order transformer.
+You are a DGS word-order transformer.
+
 TASK: Reorder ONLY the given words to a common DGS word order.
 
-RULES:
+CRITICAL RULES:
 - Use exactly the same words (no adding, removing, changing)
+- **DO NOT CHANGE, REMOVE, OR MODIFY ANY NUMBERS**
 - Do not change word form or spelling
 - No punctuation
 - Output one single line only
@@ -522,9 +644,9 @@ DGS ORDER GUIDELINES (apply ONLY if elements are present):
 2. PLACE →
    (zu-hause, schule, arbeit, berlin, hier, dort, ...
     any location or place-related words)
-3. TOPIC or OBJECT →
-   (brot, apfel, auto, arbeit, problem, ...
-    any noun that is the topic or object)
+3. TOPIC or OBJECT (INCLUDING NUMBERS) →
+   (brot, apfel, auto, arbeit, problem, 5, 10, 20 ...
+    any noun, object, or number that is being discussed)
 4. SUBJECT →
    (ich, du, er, sie, wir, ihr, sie, ...
     any person or animate subject)
@@ -538,6 +660,8 @@ DGS ORDER GUIDELINES (apply ONLY if elements are present):
 8. WH-WORD (always last) →
    (was, wer, wo, wann, warum, wie, ...)
 
+**NUMBERS stay in their logical position (usually with the object they quantify)**
+
 If multiple orders are possible, choose the most common DGS order.
 Do not explain.
 
@@ -548,75 +672,28 @@ Output: heute arbeit ich müssen
 Input: morgen du brot essen nicht
 Output: morgen brot du essen nicht
 
+Input: ich haben 5 apfel
+Output: ich 5 apfel haben
+
+Input: sie sein 25 jahr alt
+Output: sie 25 jahr alt sein
+
 Now reorder:"""
-#         """You are a DGS (German Sign Language) word-order transformer.
-
-# TASK:
-# Reorder ONLY the provided words to follow natural DGS syntax.
-
-# STRICT RULES (ABSOLUTE):
-# - Use ONLY the exact words given in the input
-# - Do NOT add, remove, replace, paraphrase, or correct any word
-# - Do NOT change word form or spelling
-# - Do NOT add punctuation or extra characters
-# - Output EXACTLY one single line
-
-# IMPORTANT:
-# - All words already exist and their meaning is FIXED
-# - Your job is ONLY to reorder words, nothing else
-
-# DGS ORDER GUIDELINES (apply ONLY if elements are present):
-# 1. TIME / CONDITION
-#    (heute, morgen, gestern, jetzt, bevor, nach, während, wenn, falls)
-# 2. PLACE
-#    (haus, schule, markt, stadt)
-# 3. TOPIC / OBJECT
-#    (arbeit, brot, geld, gemüse, problem)
-# 4. SUBJECT
-#    (ich, du, er, sie, wir, ihr)
-# 5. MAIN VERB
-#    (essen, gehen, arbeiten, machen, kochen)
-# 6. MODAL VERB
-#    (müssen, können, wollen)
-# 7. NEGATION
-#    (nicht, kein)
-# 8. WH-WORD (MUST be last if present)
-#    (was, wer, wo, wann, warum, wie) - MUST BE LAST
-
-# NOTES:
-# - Do NOT force categories that are not present
-# - If unsure between multiple valid orders, choose the most common DGS order
-# - Keep logical clause order (condition before result)
-
-# EXAMPLES:
-
-# Input:
-# heute ich arbeit müssen
-# Output:
-# heute arbeit ich müssen
-
-# Input:
-# morgen du brot essen nicht
-# Output:
-# morgen brot du essen nicht
-
-# Input:
-# wenn suppe salzig wasser hinzufügen du können
-# Output:
-# wenn suppe salzig wasser hinzufügen du können
-
-# Now reorder this sentence:"""
 
     def _reorder_to_dgs(self, sentence: str) -> str:
         """
         Bước 4: Sắp xếp lại thứ tự từ theo cấu trúc DGS
+        GIỮ NGUYÊN SỐ
         """
         try:
+            # Trích xuất số
+            number_map, text_with_placeholders = self._extract_numbers(sentence)
+
             pipeline = self._get_pipeline()
 
             messages = [
                 {"role": "system", "content": self._get_dgs_word_order_prompt()},
-                {"role": "user", "content": sentence}
+                {"role": "user", "content": text_with_placeholders}
             ]
 
             outputs = pipeline(
@@ -628,9 +705,12 @@ Now reorder:"""
 
             response = outputs[0]["generated_text"][-1]["content"]
 
-            # Clean response
-            reordered = re.sub(r'[^a-zäöüß\s]', '', response.lower().strip())
+            # Clean response - giữ số và underscore
+            reordered = re.sub(r'[^a-zäöüß\s_0-9]', '', response.lower().strip())
             reordered = ' '.join(reordered.split())  # Remove extra spaces
+
+            # Khôi phục số
+            reordered = self._restore_numbers(reordered, number_map)
 
             # Validate: check if all words are preserved
             input_words = sorted(sentence.split())
@@ -696,7 +776,7 @@ Now reorder:"""
                     best_candidate = max(all_candidates,
                                        key=lambda s: self._calculate_coverage(s)[0])
 
-                    # Lọc bỏ từ không có trong vocabulary
+                    # Lọc bỏ từ không có trong vocabulary (NHƯNG GIỮ SỐ)
                     final_words = [w for w in best_candidate.split() if self._word_exists_in_vocab(w)]
 
                     if not final_words:
@@ -715,12 +795,7 @@ Now reorder:"""
 
             # Tính coverage cuối cùng
             coverage, _ = self._calculate_coverage(dgs_ordered)
-            # print("=====================")
-            # print(coverage)
-            # print(dgs_ordered)
-            # print(text)
-            # print(strategy)
-            # print("=====================")
+
             return self._create_result(text, dgs_ordered, coverage, strategy)
 
         finally:
@@ -747,37 +822,30 @@ Now reorder:"""
         }
 
 
-
-
 def example_batch_processing():
-    """Xử lý nhiều câu"""
+    """Xử lý nhiều câu - Bao gồm test với số"""
     print("\n" + "="*60)
-    print("BATCH PROCESSING - Ưu tiên giữ câu gốc + Morphology Variants")
+    print("BATCH PROCESSING - Ưu tiên giữ câu gốc + Morphology Variants + GIỮ SỐ")
     print("="*60)
 
     test_sentences = [
-        
+        "Ich werde um 7 Uhr am Pier auf dich warten.",  # Test với số giờ
         "Ich esse einen Apfel",
         "Heute gehe ich zur Arbeit",
-        # "Ich möchte morgen mit meinem Freund ins Kino gehen",
-        # "Kannst du mir bitte helfen",
-        # "Warum hast du mir gestern nicht geantwortet",
-        # "Wenn es morgen regnet bleibe ich zu Hause",
-        # "Ich denke dass dieses Problem nicht einfach zu lösen ist",
-        # "Nachdem ich gegessen habe gehe ich spazieren",
-        # "Obwohl ich müde bin muss ich weiterarbeiten",
-        "Der Lehrer erklärt den Studenten wie das System funktioniert"
-
-
+        "Ich habe 5 Äpfel und 3 Bananen",  # Test với số
+        "Sie ist 25 Jahre alt",  # Test với số
+        "Der Lehrer erklärt den Studenten wie das System funktioniert",
+        "Wir treffen uns um 15 Uhr",  # Test với số giờ
+        "Das Buch kostet 19.99 Euro",  # Test với số thập phân
     ]
 
-    with SignLanguageMapper(video_dir="/workspace/signlang/video_combine") as mapper:
+    with SignLanguageMapper(video_dir="/workspace/signlang/pose_json") as mapper:
         results = []
 
         for sentence in test_sentences:
             print("\n" + "="*60)
             print(f"Processing: {sentence}")
-            s=time.time()
+            s = time.time()
             result = mapper.process(sentence)
             results.append(result)
             print(f"Time: {time.time()-s:.2f}s")
@@ -794,5 +862,5 @@ def example_batch_processing():
     return results
 
 
-# if __name__ == "__main__":
-#     example_batch_processing()
+if __name__ == "__main__":
+    example_batch_processing()

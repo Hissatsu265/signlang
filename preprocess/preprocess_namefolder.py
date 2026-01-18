@@ -29,5 +29,5 @@ def rename_folders(parent_dir):
 
 
 # ===== sử dụng =====
-root_folder = "/workspace/signlang/video"
+root_folder = "/workspace/0signlang"
 rename_folders(root_folder)
