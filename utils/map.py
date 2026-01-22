@@ -3,7 +3,26 @@ import re
 import random
 
 BASE_PATH = "/workspace/signlang/pose_json"
+def insert_A_into_selected_videos(selected_videos,insert_value):
+    A_item = ("normalpose", insert_value)
+    result = [A_item]
 
+    i = 0
+    n = len(selected_videos)
+
+    while i < n:
+        remaining = n - i
+
+        if remaining <= 7:
+            result.extend(selected_videos[i:])
+            break
+
+        result.extend(selected_videos[i:i+5])
+        result.append(A_item)
+        i += 5
+
+    result.append(A_item)
+    return result
 def get_video_paths_from_text(text):
     # Chuẩn hóa text
     text = text.lower()
@@ -86,7 +105,8 @@ def get_video_paths_from_text(text):
                 selected_videos.append((word, None))
         else:
             selected_videos.append((word, None))
-
+            
+    selected_videos = insert_A_into_selected_videos(selected_videos,"/workspace/signlang/ref_pose/nguoithat_00001.json")
     return selected_videos
 
 

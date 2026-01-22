@@ -11,7 +11,6 @@ class OpenPoseVideoRenderer:
             'right_arm': (255, 0, 0),
             'left_leg': (0, 200, 255),
             'right_leg': (255, 0, 200),
-            'face': (255, 200, 255),  # Màu hồng cho mặt
         }
 
         # OpenPose keypoint indices
@@ -21,6 +20,23 @@ class OpenPoseVideoRenderer:
         self.MID_HIP = 8
         self.LEFT_HIP = 11
         self.RIGHT_HIP = 8
+
+        # Ngưỡng khoảng cách tối đa (normalized coordinates)
+        self.MAX_HAND_BONE_LENGTH = 0.15
+        self.MAX_BODY_BONE_LENGTH = 0.3
+
+    def calculate_distance(self, point1, point2):
+        """Tính khoảng cách Euclidean giữa 2 điểm"""
+        dx = point1[0] - point2[0]
+        dy = point1[1] - point2[1]
+        return np.sqrt(dx*dx + dy*dy)
+
+    def is_valid_connection(self, point1, point2, max_distance):
+        """
+        Kiểm tra xem connection có hợp lệ không dựa trên khoảng cách
+        """
+        distance = self.calculate_distance(point1, point2)
+        return distance < max_distance
 
     def load_openpose_json(self, json_path):
         """Đọc file JSON OpenPose format"""
@@ -77,27 +93,9 @@ class OpenPoseVideoRenderer:
                 if hand_landmarks:
                     hands.append(hand_landmarks)
 
-        # Parse face keypoints
-        face_kpts = person.get('face_keypoints_2d', [])
-        face_landmarks = []
-        if face_kpts:
-            for i in range(0, len(face_kpts), 3):
-                if i + 2 < len(face_kpts):
-                    x = face_kpts[i]
-                    y = face_kpts[i + 1]
-                    conf = face_kpts[i + 2]
-
-                    face_landmarks.append([
-                        x / canvas_width,
-                        y / canvas_height,
-                        0.0,
-                        conf
-                    ])
-
         return {
             'pose': pose_landmarks,
             'hands': hands,
-            'face': face_landmarks
         }
 
     def get_root_joint(self, pose_landmarks):
@@ -168,7 +166,6 @@ class OpenPoseVideoRenderer:
         normalized_frame = {
             'pose': [],
             'hands': [],
-            'face': []
         }
 
         # Normalize pose landmarks
@@ -210,177 +207,78 @@ class OpenPoseVideoRenderer:
 
             normalized_frame['hands'].append(normalized_hand)
 
-        # Normalize face
-        for landmark in frame_data.get('face', []):
-            if len(landmark) >= 4:
-                x, y = landmark[0], landmark[1]
-                x_scaled = (x - target_root[0]) * scale_factor + target_root[0]
-                y_scaled = (y - target_root[1]) * scale_factor + target_root[1]
-                x_final = x_scaled + translation[0]
-                y_final = y_scaled + translation[1]
-
-                normalized_frame['face'].append([
-                    x_final,
-                    y_final,
-                    landmark[2],
-                    landmark[3]
-                ])
-            else:
-                normalized_frame['face'].append(landmark)
-
         return normalized_frame
 
-    def draw_face(self, frame, landmarks, width, height):
-        """
-        Vẽ face keypoints theo chuẩn OpenPose (70 điểm)
-        """
-        if not landmarks or len(landmarks) < 17:
-            return
-
-        def get_point(idx):
-            if idx < len(landmarks):
-                lm = landmarks[idx]
-                if len(lm) >= 4 and lm[3] > 0.1:
-                    return (int(lm[0] * width), int(lm[1] * height))
-            return None
-
-        # Vẽ đường viền mặt (jawline) - keypoints 0-16
-        for i in range(16):
-            p1 = get_point(i)
-            p2 = get_point(i + 1)
-            if p1 and p2:
-                cv2.line(frame, p1, p2, self.colors['face'], 1)
-
-        # Vẽ lông mày phải - keypoints 17-21
-        for i in range(17, 21):
-            p1 = get_point(i)
-            p2 = get_point(i + 1)
-            if p1 and p2:
-                cv2.line(frame, p1, p2, self.colors['face'], 1)
-
-        # Vẽ lông mày trái - keypoints 22-26
-        for i in range(22, 26):
-            p1 = get_point(i)
-            p2 = get_point(i + 1)
-            if p1 and p2:
-                cv2.line(frame, p1, p2, self.colors['face'], 1)
-
-        # Vẽ sống mũi - keypoints 27-30
-        for i in range(27, 30):
-            p1 = get_point(i)
-            p2 = get_point(i + 1)
-            if p1 and p2:
-                cv2.line(frame, p1, p2, self.colors['face'], 1)
-
-        # Vẽ mũi dưới - keypoints 31-35
-        nose_bottom = [31, 32, 33, 34, 35, 31]  # Tạo vòng khép kín
-        for i in range(len(nose_bottom) - 1):
-            p1 = get_point(nose_bottom[i])
-            p2 = get_point(nose_bottom[i + 1])
-            if p1 and p2:
-                cv2.line(frame, p1, p2, self.colors['face'], 1)
-
-        # Vẽ mắt phải - keypoints 36-41
-        right_eye = [36, 37, 38, 39, 40, 41, 36]  # Vòng khép kín
-        for i in range(len(right_eye) - 1):
-            p1 = get_point(right_eye[i])
-            p2 = get_point(right_eye[i + 1])
-            if p1 and p2:
-                cv2.line(frame, p1, p2, self.colors['face'], 1)
-
-        # Vẽ mắt trái - keypoints 42-47
-        left_eye = [42, 43, 44, 45, 46, 47, 42]  # Vòng khép kín
-        for i in range(len(left_eye) - 1):
-            p1 = get_point(left_eye[i])
-            p2 = get_point(left_eye[i + 1])
-            if p1 and p2:
-                cv2.line(frame, p1, p2, self.colors['face'], 1)
-
-        # Vẽ môi ngoài - keypoints 48-59
-        outer_lip = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 48]
-        for i in range(len(outer_lip) - 1):
-            p1 = get_point(outer_lip[i])
-            p2 = get_point(outer_lip[i + 1])
-            if p1 and p2:
-                cv2.line(frame, p1, p2, self.colors['face'], 1)
-
-        # Vẽ môi trong - keypoints 60-67
-        inner_lip = [60, 61, 62, 63, 64, 65, 66, 67, 60]
-        for i in range(len(inner_lip) - 1):
-            p1 = get_point(inner_lip[i])
-            p2 = get_point(inner_lip[i + 1])
-            if p1 and p2:
-                cv2.line(frame, p1, p2, self.colors['face'], 1)
-
-        # Vẽ các điểm keypoint
-        for idx, landmark in enumerate(landmarks):
-            if len(landmark) >= 4 and landmark[3] > 0.1:
-                x, y = int(landmark[0] * width), int(landmark[1] * height)
-                # Vẽ điểm nhỏ hơn một chút
-                cv2.circle(frame, (x, y), 1, (255, 255, 255), -1)
-
     def draw_openpose_skeleton(self, frame, landmarks, width, height):
-        """Vẽ skeleton OpenPose"""
+        """
+        Vẽ skeleton OpenPose - KHÔNG VẼ PHẦN ĐẦU/CỔ
+        Chỉ vẽ từ vai trở xuống
+        """
+        # Chỉ vẽ các kết nối từ vai trở xuống (bỏ hết keypoint 0, 1, 14, 15, 16, 17)
         connections = [
-            (0, 1), (0, 14), (14, 16), (0, 15), (15, 17),
-            (1, 2), (1, 5),
-            (2, 3), (3, 4),
-            (5, 6), (6, 7),
+            # Bỏ: (0, 1), (0, 14), (14, 16), (0, 15), (15, 17),  # Đầu/Cổ
+            (1, 2), (1, 5),  # Từ cổ xuống vai
+            (2, 3), (3, 4),  # Tay phải
+            (5, 6), (6, 7),  # Tay trái
         ]
 
         def get_point(idx):
             if idx < len(landmarks):
                 lm = landmarks[idx]
                 if len(lm) >= 4 and lm[3] > 0.1:
-                    return (int(lm[0] * width), int(lm[1] * height))
-            return None
+                    screen_point = (int(lm[0] * width), int(lm[1] * height))
+                    norm_point = (lm[0], lm[1])
+                    return screen_point, norm_point
+            return None, None
 
-        left_shoulder = get_point(5)
-        right_shoulder = get_point(2)
+        left_shoulder_screen, left_shoulder_norm = get_point(5)
+        right_shoulder_screen, right_shoulder_norm = get_point(2)
 
-        if left_shoulder and right_shoulder:
-            mid_shoulder_x = (left_shoulder[0] + right_shoulder[0]) // 2
-            mid_shoulder_y = (left_shoulder[1] + right_shoulder[1]) // 2
-            mid_shoulder = (mid_shoulder_x, mid_shoulder_y)
-            bottom_point = (mid_shoulder_x, height)
-            cv2.line(frame, mid_shoulder, bottom_point, self.colors['body'], 3)
+        if left_shoulder_screen and right_shoulder_screen and left_shoulder_norm and right_shoulder_norm:
+            # Kiểm tra khoảng cách trước khi vẽ line từ vai xuống dưới
+            if self.is_valid_connection(left_shoulder_norm, right_shoulder_norm, self.MAX_BODY_BONE_LENGTH):
+                mid_shoulder_x = (left_shoulder_screen[0] + right_shoulder_screen[0]) // 2
+                mid_shoulder_y = (left_shoulder_screen[1] + right_shoulder_screen[1]) // 2
+                mid_shoulder = (mid_shoulder_x, mid_shoulder_y)
+                bottom_point = (mid_shoulder_x, height)
+                cv2.line(frame, mid_shoulder, bottom_point, self.colors['body'], 3)
 
         for start_idx, end_idx in connections:
-            p1 = get_point(start_idx)
-            p2 = get_point(end_idx)
+            p1_screen, p1_norm = get_point(start_idx)
+            p2_screen, p2_norm = get_point(end_idx)
 
-            if start_idx in [0, 14, 15, 16, 17]:
-                color = self.colors['head']
-            elif start_idx in [5, 6, 7]:
+            if start_idx in [5, 6, 7]:
                 color = self.colors['left_arm']
             elif start_idx in [2, 3, 4]:
                 color = self.colors['right_arm']
             else:
                 color = self.colors['body']
 
-            if p1 and p2:
-                cv2.line(frame, p1, p2, color, 3)
+            # Chỉ vẽ nếu cả 2 điểm tồn tại VÀ khoảng cách hợp lệ
+            if p1_screen and p2_screen and p1_norm and p2_norm:
+                if self.is_valid_connection(p1_norm, p2_norm, self.MAX_BODY_BONE_LENGTH):
+                    cv2.line(frame, p1_screen, p2_screen, color, 3)
 
+        # Vẽ các điểm keypoint - CHỈ TỪ VAI TRỞ XUỐNG (keypoint 2-7)
         for idx, landmark in enumerate(landmarks):
-            if idx <= 7 and len(landmark) >= 4 and landmark[3] > 0.1:
+            # Chỉ vẽ keypoint từ 2 đến 7 (vai và tay)
+            if 2 <= idx <= 7 and len(landmark) >= 4 and landmark[3] > 0.1:
                 x, y = int(landmark[0] * width), int(landmark[1] * height)
-
-                if idx in [1, 2, 3, 4, 5, 6, 7]:
-                    radius = 6
-                else:
-                    radius = 4
+                radius = 6
 
                 cv2.circle(frame, (x, y), radius, (255, 255, 255), -1)
                 cv2.circle(frame, (x, y), radius+1, (0, 0, 0), 1)
 
     def draw_hand(self, frame, landmarks, width, height):
-        """Vẽ bàn tay"""
+        """
+        Vẽ bàn tay với kiểm tra khoảng cách
+        """
         connections = [
-            (0, 1), (1, 2), (2, 3), (3, 4),
-            (0, 5), (5, 6), (6, 7), (7, 8),
-            (0, 9), (9, 10), (10, 11), (11, 12),
-            (0, 13), (13, 14), (14, 15), (15, 16),
-            (0, 17), (17, 18), (18, 19), (19, 20),
+            (0, 1), (1, 2), (2, 3), (3, 4),      # Ngón cái
+            (0, 5), (5, 6), (6, 7), (7, 8),      # Ngón trỏ
+            (0, 9), (9, 10), (10, 11), (11, 12), # Ngón giữa
+            (0, 13), (13, 14), (14, 15), (15, 16), # Ngón áp út
+            (0, 17), (17, 18), (18, 19), (19, 20), # Ngón út
         ]
 
         for start_idx, end_idx in connections:
@@ -388,11 +286,17 @@ class OpenPoseVideoRenderer:
                 start = landmarks[start_idx]
                 end = landmarks[end_idx]
 
-                start_point = (int(start[0] * width), int(start[1] * height))
-                end_point = (int(end[0] * width), int(end[1] * height))
+                start_screen = (int(start[0] * width), int(start[1] * height))
+                end_screen = (int(end[0] * width), int(end[1] * height))
 
-                cv2.line(frame, start_point, end_point, (0, 255, 255), 2)
+                start_norm = (start[0], start[1])
+                end_norm = (end[0], end[1])
 
+                # KIỂM TRA KHOẢNG CÁCH TRƯỚC KHI VẼ
+                if self.is_valid_connection(start_norm, end_norm, self.MAX_HAND_BONE_LENGTH):
+                    cv2.line(frame, start_screen, end_screen, (0, 255, 255), 2)
+
+        # Vẽ các điểm keypoint
         for landmark in landmarks:
             x, y = int(landmark[0] * width), int(landmark[1] * height)
             cv2.circle(frame, (x, y), 3, (255, 255, 255), -1)
@@ -571,20 +475,10 @@ class OpenPoseVideoRenderer:
                         )
                         hands_interpolated.append(hand_interp)
 
-                # Nội suy face
-                face_interpolated = []
-                if last_frame.get('face') and first_frame.get('face'):
-                    face_interpolated = self.interpolate_keypoints(
-                        last_frame['face'],
-                        first_frame['face'],
-                        transition_frames
-                    )
-
                 for j in range(transition_frames):
                     transition_frame = {
                         'pose': pose_interpolated[j],
                         'hands': [],
-                        'face': face_interpolated[j] if j < len(face_interpolated) else []
                     }
 
                     for hand_data in hands_interpolated:
@@ -624,10 +518,6 @@ class OpenPoseVideoRenderer:
                     for hand in parsed_data['hands']:
                         self.draw_hand(frame, hand, width, height)
 
-                # VẼ FACE
-                if parsed_data.get('face'):
-                    self.draw_face(frame, parsed_data['face'], width, height)
-
             out.write(frame)
 
         out.release()
@@ -636,13 +526,14 @@ class OpenPoseVideoRenderer:
         print(f"✓ MERGE COMPLETED WITH NORMALIZATION!")
         print(f"✓ Total frames: {len(final_frames)}")
         print(f"✓ Video saved: {output_path}")
-        print(f"✓ All skeletons normalized to same scale and position")
+        print(f"✓ All skeletons normalized (NO FACE/HEAD rendering)")
+        print(f"✓ Distance validation applied (hands, body)")
         print("="*60 + "\n")
 
     def render_video_from_json(self, json_path, output_path, fps=30, width=720, height=720):
         """Tạo video từ file JSON OpenPose"""
         print("\n" + "="*60)
-        print("OPENPOSE JSON TO VIDEO RENDERER")
+        print("OPENPOSE JSON TO VIDEO RENDERER (NO FACE)")
         print("="*60 + "\n")
 
         frames_data = self.load_openpose_json(json_path)
@@ -670,21 +561,21 @@ class OpenPoseVideoRenderer:
                     for hand in parsed_data['hands']:
                         self.draw_hand(frame, hand, width, height)
 
-                # VẼ FACE
-                if parsed_data.get('face'):
-                    self.draw_face(frame, parsed_data['face'], width, height)
-
             out.write(frame)
 
         out.release()
         print(f"\n✓ Video saved: {output_path}")
 
 
-# # ============= CÁCH SỬ DỤNG =============
+# ============= CÁCH SỬ DỤNG =============
 
 # if __name__ == "__main__":
 #     try:
 #         renderer = OpenPoseVideoRenderer()
+
+#         # Bạn có thể điều chỉnh các ngưỡng khoảng cách tại đây:
+#         renderer.MAX_HAND_BONE_LENGTH = 0.3
+#         renderer.MAX_BODY_BONE_LENGTH = 0.5
 
 #         mode = "multi"
 
@@ -700,24 +591,31 @@ class OpenPoseVideoRenderer:
 
 #         elif mode == "multi":
 #             json_paths = [
-#                 "/content/firstframe1_00001.json",
-#                 "/content/processed_6f432c7a.json",
+#                 "/content/nguoithat_00001.json",
+#                 # "/content/Wikisign_DGS_process.json",
+#                 # "/content/gebaerdenlernende_process.json",
+#                 # "/content/gebaerdenlernende_process1.json",
+#                 # "/content/haben.json",
+#                 # "/content/ich.json",
+#                 "/content/PoseKeypoint2_00001fiiiin.json",
 #                 "/content/PoseKeypoint2_00001sdfdf.json",
-#                 "/content/PoseKeypoint2_ư00001.json",
-#                 "/content/processed_dba7c989.json",
-#                 "/content/firstframe1_00001.json",
+#                 "/content/processed_47c3f3ee.json",
+#                 "/content/processed_a336e60c.json",
+#                 "/content/processed_ecf447fb.json",
+#                 "/content/nguoithat_00001.json",
 #             ]
-#         renderer.merge_multi_json_videos(
-#             json_paths=json_paths,
-#             output_path="merged_normalized.mp4",
-#             transition_frames=16,
-#             fps=16,
-#             width=720,
-#             height=720
-#         )
+#             renderer.merge_multi_json_videos(
+#                 json_paths=json_paths,
+#                 output_path="nohead2.mp4",
+#                 transition_frames=8,
+#                 fps=16,
+#                 width=720,
+#                 height=720
+#             )
 
-#         print("✅ Video đã merge với skeleton normalization")
-#         print("   Tất cả skeleton đã được chuẩn hóa về cùng tỷ lệ và vị trí")
+#         print("✅ Video đã merge KHÔNG CÓ MẶT/ĐẦU")
+#         print("   - Chỉ vẽ từ vai trở xuống")
+#         print("   - Distance validation đã được áp dụng")
 
 #     except Exception as e:
 #         print(f"\n❌ LỖI: {str(e)}")

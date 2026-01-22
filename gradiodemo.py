@@ -10,6 +10,7 @@ from app.service.video import convert_posetovideo
 from utils.crop_upscale import crop_and_upscale_video
 from utils.map import get_video_paths_from_text
 from utils.dgs_structure import dgs_postprocess
+from utils.fps import increase_fps_no_interpolation
 import asyncio
 import os
 # Biến global để quản lý trạng thái xử lý
@@ -75,7 +76,7 @@ def process_text_to_video(text_input):
         pose_extractor.merge_multi_json_videos(
             json_paths=json_paths,
             output_path=output_path,
-            transition_frames=16,
+            transition_frames=8,
             fps=16,
             width=720,
             height=720
@@ -91,7 +92,7 @@ def process_text_to_video(text_input):
         # =====================Convert to video=============================
         final_video_path = asyncio.run(convert_posetovideo("/workspace/signlang/multi_transition_output.mp4"))
         # ===================================================
-
+        final_video_path = increase_fps_no_interpolation(final_video_path, target_fps=25)
         # video_path = "/workspace/signlang/video/-frei/processed_45750628.mp4"
         return final_video_path, "✅ Processing complete! Video is ready.", result['output']
         

@@ -55,3 +55,27 @@ Result: {'original': 'Ich habe 2 den Apfel gegessen.', 'output': 'ich 2 apfel es
 Result: {'original': 'Tôi đã ăn hai quả táo trên bàn.', 'output': 'zwei apfel ich auf tisch essen', 'words': ['zwei', 'apfel', 'ich', 'auf', 'tisch', 'essen'], 'coverage': 100.0, 'strategy': 'normalized'}
 2Result: {'original': 'Tôi đã ăn hai quả táo trên bàn.', 'output': 'zwei apfel ich tisch essen', 'words': ['zwei', 'apfel', 'ich', 'auf', 'tisch', 'essen'], 'coverage': 100.0, 'strategy': 'normalized'}
 ==============
+==============
+Result: {'original': 'Ich habe heute Morgen zwei Äpfel gegessen.', 'output': 'heute morgen zwei apfel ich essen haben', 'words': ['heute', 'morgen', 'zwei', 'apfel', 'ich', 'essen', 'haben'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Ich habe heute Morgen zwei Äpfel gegessen.', 'output': 'heute morgen zwei apfel ich essen', 'words': ['heute', 'morgen', 'zwei', 'apfel', 'ich', 'essen', 'haben'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============
+==============
+Result: {'original': 'Ich trinke heute Abend zu Hause Kaffee', 'output': 'heute abend zu heim kaffee ich trinken', 'words': ['heute', 'abend', 'zu', 'heim', 'kaffee', 'ich', 'trinken'], 'coverage': 100.0, 'strategy': 'repaired'}
+2Result: {'original': 'Ich trinke heute Abend zu Hause Kaffee', 'output': 'heute abend heim kaffee ich trinken', 'words': ['heute', 'abend', 'zu', 'heim', 'kaffee', 'ich', 'trinken'], 'coverage': 100.0, 'strategy': 'repaired'}
+==============
+==============
+Result: {'original': 'Ich trinke heute Abend zu Hause Kaffee', 'output': 'heute abend zu heim kaffee ich trinken', 'words': ['heute', 'abend', 'zu', 'heim', 'kaffee', 'ich', 'trinken'], 'coverage': 100.0, 'strategy': 'repaired'}
+2Result: {'original': 'Ich trinke heute Abend zu Hause Kaffee', 'output': 'heute abend heim kaffee ich trinken', 'words': ['heute', 'abend', 'zu', 'heim', 'kaffee', 'ich', 'trinken'], 'coverage': 100.0, 'strategy': 'repaired'}
+==============
+==============
+Result: {'original': 'Morgen muss ich wegen des schlechten Wetters mit dem Bus zur Arbeit fahren.', 'output': 'morgen wegen schlecht wetter ich müssen mit bus zur arbeit fahren', 'words': ['morgen', 'wegen', 'schlecht', 'wetter', 'ich', 'müssen', 'mit', 'bus', 'zur', 'arbeit', 'fahren'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Morgen muss ich wegen des schlechten Wetters mit dem Bus zur Arbeit fahren.', 'output': 'morgen wegen schlecht wetter ich müssen bus arbeit fahren', 'words': ['morgen', 'wegen', 'schlecht', 'wetter', 'ich', 'müssen', 'mit', 'bus', 'zur', 'arbeit', 'fahren'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============
+==============
+Result: {'original': 'In den letzten 3 Monaten habe ich jeden Tag etwa 2 Stunden gelernt und dabei mehr als 50 neue Wörter auf Deutsch geschrieben.', 'output': '3 monat ich tag tag etwa 2 stunde lernen dabei mehr als 50 neu wort deutsch schreiben', 'words': ['3', 'monat', 'ich', 'tag', 'tag', 'etwa', '2', 'stunde', 'lernen', 'dabei', 'mehr', 'als', '50', 'neu', 'wort', 'deutsch', 'schreiben'], 'coverage': 100.0, 'strategy': 'synonym'}
+2Result: {'original': 'In den letzten 3 Monaten habe ich jeden Tag etwa 2 Stunden gelernt und dabei mehr als 50 neue Wörter auf Deutsch geschrieben.', 'output': '3 monat ich tag etwa 2 stunde lernen dabei mehr als 50 neu wort deutsch schreiben', 'words': ['3', 'monat', 'ich', 'tag', 'tag', 'etwa', '2', 'stunde', 'lernen', 'dabei', 'mehr', 'als', '50', 'neu', 'wort', 'deutsch', 'schreiben'], 'coverage': 100.0, 'strategy': 'synonym'}
+==============
+==============
+Result: {'original': 'In den letzten 3 Monaten habe ich jeden Tag etwa 2 Stunden gelernt und dabei mehr als 50 neue Wörter auf Deutsch geschrieben.', 'output': '3 monat ich tag tag etwa 2 stunde lernen dabei mehr als 50 neu wort deutsch schreiben', 'words': ['3', 'monat', 'ich', 'tag', 'tag', 'etwa', '2', 'stunde', 'lernen', 'dabei', 'mehr', 'als', '50', 'neu', 'wort', 'deutsch', 'schreiben'], 'coverage': 100.0, 'strategy': 'synonym'}
+2Result: {'original': 'In den letzten 3 Monaten habe ich jeden Tag etwa 2 Stunden gelernt und dabei mehr als 50 neue Wörter auf Deutsch geschrieben.', 'output': '3 monat ich tag etwa 2 stunde lernen dabei mehr als 50 neu wort deutsch schreiben', 'words': ['3', 'monat', 'ich', 'tag', 'tag', 'etwa', '2', 'stunde', 'lernen', 'dabei', 'mehr', 'als', '50', 'neu', 'wort', 'deutsch', 'schreiben'], 'coverage': 100.0, 'strategy': 'synonym'}
+==============

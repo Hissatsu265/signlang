@@ -368,8 +368,8 @@
     "inputs": {
       "model_name": "umt5-xxl-enc-bf16.safetensors",
       "precision": "bf16",
-      "positive_prompt": "A realistic video of the person in the image performing clear and natural sign language gestures. Professional posture, calm facial expressions, smooth and accurate hand movements, upper body visible, neutral background, consistent lighting, high realism, stable camera, instructional sign language style. He didn't open his mouth or say anything during this process.",
-      "negative_prompt": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+      "positive_prompt": "A high-quality, photorealistic video of a real human generated from the input image, performing clear and natural sign language gestures with both hands. Smooth and controlled arm, wrist, and finger movements, accurate and well-defined hand shapes suitable for sign language. Upper body visible (half-body), front-facing, with strong focus on hands and arms. Neutral and calm facial expression, lips fully closed at all times, no speaking, no lip movement. Static camera, stable framing, clean and simple background, soft and even studio lighting, natural skin tones, realistic textures, smooth and consistent animation, anatomically correct proportions.",
+      "negative_prompt": "talking, speaking, open mouth, mouth movement, lip movement, lip syncing, singing, whispering, smiling with open mouth, exaggerated facial expression, cartoon style, anime, distorted hands, extra fingers, missing fingers, fused fingers, broken anatomy, deformed hands, blurry hands, shaky camera, fast motion, motion blur, exaggerated head movement, body twisting, dancing, random gestures, incorrect sign language, facial animation focus, exaggerated emotions",
       "quantization": "disabled",
       "use_disk_cache": true,
       "device": "gpu"
