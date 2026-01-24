@@ -1,32 +1,44 @@
-#!/bin/bash
+# #!/bin/bash
+# set -e
 
-# Xác định thư mục chứa script này
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# # Lấy thư mục chứa file .sh hiện tại
+# SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Thư mục đích
-BASE_DIR="/workspace/signlang"
-ZIP_PATH="$BASE_DIR/ComfyUI.zip"
+# echo "SCRIPT_DIR = $SCRIPT_DIR"
 
-# URL tải
-COMFYUI_URL="https://huggingface.co/datasets/Hissatsu265/signlang/resolve/main/ComfyUI.zip"
+# # Tải dữ liệu
+# wget https://huggingface.co/datasets/Hissatsu265/Signlang_ver2/resolve/main/comfyui.zip
+# wget https://huggingface.co/datasets/Hissatsu265/Signlang_ver2/resolve/main/pose_json.zip
 
-echo "📁 Base directory: $BASE_DIR"
+# # Giải nén
+# unzip -o comfyui.zip
+# unzip -o pose_json.zip
 
-# Tạo thư mục nếu chưa tồn tại
-echo "🔧 Creating directory if not exist..."
-mkdir -p "$BASE_DIR"
+# # Tạo thư mục signlang nếu chưa có
+# mkdir -p "$SCRIPT_DIR"
 
-echo "📥 Downloading ComfyUI package..."
+# # Di chuyển dữ liệu
+# mv "$SCRIPT_DIR/pose_json" "$SCRIPT_DIR"
+# mv "$SCRIPT_DIR/workspace/signlang/ComfyUI" "$SCRIPT_DIR"
+# echo "Setup completed successfully"
+# rm -rf "$SCRIPT_DIR/workspace"
+# rm -rf "$SCRIPT_DIR/comfyui.zip"
+# rm -rf "$SCRIPT_DIR/pose_json.zip"
 
-# Tải zip, không tải lại nếu đã tồn tại
-wget -nc -O "$ZIP_PATH" "$COMFYUI_URL"
 
-echo "📦 Unzipping ComfyUI..."
+# pip install -r requirements.txt
+# pip install opencv-python sageattention
 
-# Giải nén, ghi đè nếu đã tồn tại
-unzip -o "$ZIP_PATH" -d "$BASE_DIR"
+# # Cài đặt ComfyUI
+# cd "$SCRIPT_DIR/ComfyUI"
+# pip install -r requirements.txt
 
-echo "🧹 Cleaning up zip file..."
-rm -f "$ZIP_PATH"
+# # Custom nodes
+# cd "$SCRIPT_DIR/ComfyUI/custom_nodes/comfyui-kjnodes"
+# pip install -r requirements.txt
 
-echo "✅ ComfyUI downloaded and extracted successfully!"
+# cd "$SCRIPT_DIR/ComfyUI/custom_nodes/comfyui-videohelpersuite"
+# pip install -r requirements.txt
+
+# cd "$SCRIPT_DIR/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper"
+# pip install -r requirements.txt

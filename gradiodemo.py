@@ -13,24 +13,27 @@ from utils.dgs_structure import dgs_postprocess
 from utils.fps import increase_fps_no_interpolation
 import asyncio
 import os
+import tempfile
+import subprocess
+
 # Biến global để quản lý trạng thái xử lý
 is_processing = False
 processing_lock = threading.Lock()
 # mapper = None 
 
 def process_text_to_video(text_input):
-    """Hàm xử lý text và trả về video và text kết quả"""
+    """Hàm xử lý text và trả về 2 video và text kết quả"""
     global is_processing, mapper
     
     with processing_lock:
         if is_processing:
-            # Trả về: Video=None, Thông báo hệ thống, Text kết quả=""
-            return None, "⚠️ System is being used by another user. Please try again later.", ""
+            # Trả về: Video1=None, Video2=None, Thông báo hệ thống, Text kết quả=""
+            return None, None, "⚠️ System is being used by another user. Please try again later.", ""
         is_processing = True
     
     try:
         if not text_input or text_input.strip() == "":
-            return None, "❌ Please enter text content.", ""
+            return None, None, "❌ Please enter text content.", ""
 # ==================LLM===============================================
         
         print(f"Processing: {text_input}")
@@ -57,22 +60,62 @@ def process_text_to_video(text_input):
         print("LLM processing complete.")
 
 # =====================Extracpose===========================================
-        path_video_worlds= get_video_paths_from_text(result['output'])
-        json_paths=[]
+        path_video_worlds = get_video_paths_from_text(result['output'])
+        json_paths = []
+        video_paths = []
+
         for word, path in path_video_worlds:
             if path:
                 json_paths.append(path)
+                video_path = path.replace('pose_json', 'fullvideo').replace('.json', '.mp4')
+                if os.path.exists(video_path):
+                    video_paths.append(video_path)
+                elif path == "/workspace/signlang/ref_pose/nguoithat_00001.json":
+                    print(f"Video not found for path: {video_path}, using black video instead.")
+                else:
+                    default_path = '/workspace/signlang/black_video.mp4'
+                    video_paths.append(default_path)
+        # ===================================================
+        target_fps = 16
+        output_path = "/workspace/signlang/output_concat.mp4"
+
+        tmp_dir = tempfile.mkdtemp()
+        normalized_videos = []
+
+        for i, vp in enumerate(video_paths):
+            out_v = os.path.join(tmp_dir, f"norm_{i}.mp4")
+            subprocess.run([
+                "ffmpeg", "-y",
+                "-i", vp,
+                "-r", str(target_fps),
+                "-vsync", "cfr",
+                out_v
+            ], check=True)
+            normalized_videos.append(out_v)
+
+        list_file = os.path.join(tmp_dir, "list.txt")
+        with open(list_file, "w") as f:
+            for v in normalized_videos:
+                f.write(f"file '{v}'\n")
+
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", list_file,
+            "-c", "copy",
+            output_path
+        ], check=True)
         
+        # LƯU PATH CỦA VIDEO THỨ NHẤT (concat video)
+        concat_video_path = output_path
+        
+        # ======================================================
         # pose_extractor = SignLanguagePoseTransition()
         pose_extractor= OpenPoseVideoRenderer()
         output_path = "multi_transition_output.mp4"
 
         transition_frames = 30
-        # pose_extractor.create_multi_video_transition(
-        #     video_paths=list_path_videos,
-        #     output_path=output_path,
-        #     transition_frames=transition_frames
-        # )
         pose_extractor.merge_multi_json_videos(
             json_paths=json_paths,
             output_path=output_path,
@@ -82,22 +125,16 @@ def process_text_to_video(text_input):
             height=720
         )
 
-        # crop_and_upscale_video(
-        #     input_path=output_path,
-        #     output_path="/workspace/signlang/output_720.mp4",
-        #     size=720,
-        #     keep_audio=False
-        # )
-
         # =====================Convert to video=============================
         final_video_path = asyncio.run(convert_posetovideo("/workspace/signlang/multi_transition_output.mp4"))
         # ===================================================
         final_video_path = increase_fps_no_interpolation(final_video_path, target_fps=25)
-        # video_path = "/workspace/signlang/video/-frei/processed_45750628.mp4"
-        return final_video_path, "✅ Processing complete! Video is ready.", result['output']
+        
+        # RETURN 2 VIDEO: concat_video_path và final_video_path
+        return concat_video_path, final_video_path, "✅ Processing complete! Videos are ready.", result['output']
         
     except Exception as e:
-        return None, f"❌ Processing error: {str(e)}", ""
+        return None, None, f"❌ Processing error: {str(e)}", ""
     
     finally:
         with processing_lock:
@@ -111,7 +148,7 @@ def check_status():
 
 with gr.Blocks(title="Video Processing Demo") as demo:
     gr.Markdown("# 🎬 Video Processing Demo")
-    gr.Markdown("Enter text to process and receive video & text result")
+    gr.Markdown("Enter text to process and receive videos & text result")
     
     with gr.Row():
         status_display = gr.Textbox(
@@ -137,23 +174,30 @@ with gr.Blocks(title="Video Processing Demo") as demo:
             )
         
         with gr.Column(scale=1):
-            # THÊM: Ô hiển thị Text trả về
+            # Ô hiển thị Text trả về
             text_output = gr.Textbox(
                 label="Result Text Content",
                 interactive=False,
                 placeholder="Result text will appear here..."
             )
             
-            video_output = gr.Video(
-                label="Result Video",
+            # VIDEO 1: Concatenated Video
+            video_output_1 = gr.Video(
+                label="Concatenated Video",
+                interactive=False
+            )
+            
+            # VIDEO 2: Final Processed Video
+            video_output_2 = gr.Video(
+                label="Final Processed Video",
                 interactive=False
             )
     
-    # Handle events - CẬP NHẬT: Thêm text_output vào danh sách outputs
+    # Handle events - CẬP NHẬT: Thêm video_output_1 vào danh sách outputs
     process_btn.click(
         fn=process_text_to_video,
         inputs=[text_input],
-        outputs=[video_output, status_output, text_output]
+        outputs=[video_output_1, video_output_2, status_output, text_output]
     ).then(
         fn=check_status,
         outputs=[status_display]
@@ -168,7 +212,9 @@ with gr.Blocks(title="Video Processing Demo") as demo:
     1. Check system status (🟢 Ready / 🔴 Processing)
     2. Enter text content in the left box
     3. Click "Process" button to start
-    4. View the **Result Text** and **Video** on the right
+    4. View the **Result Text** and **2 Videos** on the right:
+       - **Concatenated Video**: Video ghép từ các video gốc
+       - **Final Processed Video**: Video sau khi xử lý pose và convert
     """)
 
 if __name__ == "__main__":

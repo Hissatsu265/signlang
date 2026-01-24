@@ -79,3 +79,11 @@ Result: {'original': 'In den letzten 3 Monaten habe ich jeden Tag etwa 2 Stunden
 Result: {'original': 'In den letzten 3 Monaten habe ich jeden Tag etwa 2 Stunden gelernt und dabei mehr als 50 neue Wörter auf Deutsch geschrieben.', 'output': '3 monat ich tag tag etwa 2 stunde lernen dabei mehr als 50 neu wort deutsch schreiben', 'words': ['3', 'monat', 'ich', 'tag', 'tag', 'etwa', '2', 'stunde', 'lernen', 'dabei', 'mehr', 'als', '50', 'neu', 'wort', 'deutsch', 'schreiben'], 'coverage': 100.0, 'strategy': 'synonym'}
 2Result: {'original': 'In den letzten 3 Monaten habe ich jeden Tag etwa 2 Stunden gelernt und dabei mehr als 50 neue Wörter auf Deutsch geschrieben.', 'output': '3 monat ich tag etwa 2 stunde lernen dabei mehr als 50 neu wort deutsch schreiben', 'words': ['3', 'monat', 'ich', 'tag', 'tag', 'etwa', '2', 'stunde', 'lernen', 'dabei', 'mehr', 'als', '50', 'neu', 'wort', 'deutsch', 'schreiben'], 'coverage': 100.0, 'strategy': 'synonym'}
 ==============
+==============
+Result: {'original': 'Hallo', 'output': 'hallo', 'words': ['hallo'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'Hallo', 'output': 'hallo', 'words': ['hallo'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============
+==============
+Result: {'original': 'hallo', 'output': 'hallo', 'words': ['hallo'], 'coverage': 100.0, 'strategy': 'normalized'}
+2Result: {'original': 'hallo', 'output': 'hallo', 'words': ['hallo'], 'coverage': 100.0, 'strategy': 'normalized'}
+==============
